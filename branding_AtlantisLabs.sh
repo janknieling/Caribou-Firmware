@@ -5,10 +5,10 @@ if [ -z "$SCRIPT_PATH" ]; then
 fi
 
 	# Branding
-	# set AtlantisLabs3d url
+	# set AtlantisLabs url
 	sed -i -e 's/"prusa3d.com"/"AtlantisLabs.io"/g' $SCRIPT_PATH/Firmware/ultralcd.cpp
 	# set Company name
-	sed -i -e 's/"\\n Original Prusa i3\\n   Prusa Research"/"\\n AtlantisLabs Engineering\\n  Research and Development"/g' $SCRIPT_PATH/Firmware/Marlin_main.cpp
+	sed -i -e 's/"\\n Original Prusa i3\\n   Prusa Research"/"\\n AtlantisLabs Research\\n  and Development"/g' $SCRIPT_PATH/Firmware/Marlin_main.cpp
 	# set FRIMWARE_NAME
 	sed -i -e 's/"FIRMWARE_NAME:Prusa-Firmware "/"FIRMWARE_NAME:AtlantisLabs-Firmware "/g' $SCRIPT_PATH/Firmware/Marlin_main.cpp
 	# set FIRMWARE_URL
