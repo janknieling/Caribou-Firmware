@@ -22,7 +22,7 @@
 #define CUSTOM_MENDEL_NAME "Prusa i3 MK3S"
 
 // WEH002004 OLED Display uncomment WEH002004_OLED if have this kind of display
-#define WEH002004_OLED
+//#define WEH002004_OLED
 
 // Electronics
 #define MOTHERBOARD BOARD_EINSY_1_0a
@@ -30,7 +30,7 @@
 #define HAS_SECOND_SERIAL_PORT
 
 // PSU
-#define PSU_Delta                                 // uncomment if DeltaElectronics PSU installed
+//#define PSU_Delta                                 // uncomment if DeltaElectronics PSU installed
 
 
 // Uncomment the below for the E3D PT100 temperature sensor (with or without PT100 Amplifier)
@@ -222,7 +222,7 @@
 
 #define TMC2130_USTEPS_XY   16        // microstep resolution for XY axes
 #define TMC2130_USTEPS_Z    16        // microstep resolution for Z axis
-#define TMC2130_USTEPS_E    16        // microstep resolution for E axis
+#define TMC2130_USTEPS_E    8        // microstep resolution for E axis
 #define TMC2130_INTPOL_XY   1         // extrapolate 256 for XY axes
 #define TMC2130_INTPOL_Z    1         // extrapolate 256 for Z axis
 #define TMC2130_INTPOL_E    1         // extrapolate 256 for E axis
