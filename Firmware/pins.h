@@ -3,23 +3,10 @@
 
 #include "boards.h"
 
-#if !MB(5DPRINT)
-#define X_MS1_PIN -1
-#define X_MS2_PIN -1
-#define Y_MS1_PIN -1
-#define Y_MS2_PIN -1
-#define Z_MS1_PIN -1
-#define Z_MS2_PIN -1
-#define E0_MS1_PIN -1
-#define E0_MS2_PIN -1
-#define E1_MS1_PIN -1
-#define E1_MS2_PIN -1
-#define DIGIPOTSS_PIN -1
-#endif
-
 #define LARGE_FLASH true
 
 /*****************************************************************
+<<<<<<< HEAD
  * RamboBig Pin Assignments
  ******************************************************************/
 #if MOTHERBOARD == 301
@@ -319,9 +306,22 @@
 
 #endif
 
+=======
+* Rambo Pin Assignments 1.3
+******************************************************************/
+>>>>>>> upstream/Caribou-MK3
 
+#if MOTHERBOARD == BOARD_RAMBO_MINI_1_0 //200 - orig 102
+#include "pins_Rambo_1_0.h"
+#endif //MOTHERBOARD == BOARD_RAMBO_MINI_1_0
 
+#if MOTHERBOARD == BOARD_RAMBO_MINI_1_3 //203 - orig 302
+#include "pins_Rambo_1_3.h"
+#endif //MOTHERBOARD == BOARD_RAMBO_MINI_1_3
 
+#if MOTHERBOARD == BOARD_EINSY_1_0a //310 - new
+#include "pins_Einsy_1_0.h"
+#endif //MOTHERBOARD == BOARD_EINSY_1_0a
 
 #ifndef KNOWN_BOARD
 #error Unknown MOTHERBOARD value in configuration.h

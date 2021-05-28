@@ -2,37 +2,67 @@
 #define CONFIGURATION_H
 
 #include "boards.h"
-#include "Configuration_prusa.h"
+
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
+//-//
+#include <avr/pgmspace.h>
+extern const uint16_t _nPrinterType;
+extern const char _sPrinterName[] PROGMEM;
+extern const uint16_t _nPrinterMmuType;
+extern const char _sPrinterMmuName[] PROGMEM;
+extern uint16_t nPrinterType;
+extern PGM_P sPrinterName;
 
 // Firmware version
-#define FW_version "2.2.4"
+#define FW_VERSION "3.9.3"
+#define FW_COMMIT_NR   4329
+#define FW_COMMIT_HASH ""
+// FW_VERSION_UNKNOWN means this is an unofficial build.
+// The firmware should only be checked into github with this symbol.
+#define FW_DEV_VERSION FW_VERSION_UNKNOWN
+#define FW_REPOSITORY "Unknown"
+#define FW_VERSION_FULL FW_VERSION "-" STR(FW_COMMIT_NR)
 
+// G-code language level
+#define GCODE_LEVEL 1
 
+// Debug version has debugging enabled (the symbol DEBUG_BUILD is set).
+// The debug build may be a bit slower than the non-debug build, therefore the debug build should
+// not be shipped to a customer.
+#define FW_VERSION_DEBUG    6
+// This is a development build. A development build is either built from an unofficial git repository, 
+// or from an unofficial branch, or it does not have a label set. Only the build server should set this build type.
+#define FW_VERSION_DEVEL    5
+// This is an alpha release. Only the build server should set this build type.
+#define FW_VERSION_ALPHA    4
+// This is a beta release. Only the build server should set this build type.
+#define FW_VERSION_BETA     3
+// This is a release candidate build. Only the build server should set this build type.
+#define FW_VERSION_RC       2
+// This is a final release. Only the build server should set this build type.
+#define FW_VERSION_GOLD     1
+// This is an unofficial build. The firmware should only be checked into github with this symbol,
+// the build server shall never produce builds with this build type.
+#define FW_VERSION_UNKNOWN  0
 
-#define EEPROM_SILENT 4095
-#define EEPROM_BABYSTEP_X 4093
-#define EEPROM_BABYSTEP_Y 4091
-#define EEPROM_BABYSTEP_Z 4089
-#define EEPROM_LANG 4088
+#if FW_DEV_VERSION == FW_VERSION_DEBUG
+#define DEBUG_BUILD
+#else
+#undef DEBUG_BUILD
+#endif
 
+#include "Configuration_prusa.h"
+
+#define FW_PRUSA3D_MAGIC "PRUSA3DFW"
+#define FW_PRUSA3D_MAGIC_LEN 10
+
+#include "eeprom.h"
 
 // This configuration file contains the basic settings.
 // Advanced settings can be found in Configuration_adv.h
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration
-
-//===========================================================================
-//============================= DELTA Printer ===============================
-//===========================================================================
-// For a Delta printer replace the configuration files with the files in the
-// example_configurations/delta directory.
-//
-
-//===========================================================================
-//============================= SCARA Printer ===============================
-//===========================================================================
-// For a Delta printer replace the configuration files with the files in the
-// example_configurations/SCARA directory.
-//
 
 // User-specified version info of this build to display in [Pronterface, etc] terminal window during
 // startup. Implementation of an idea by Prof Braino to inform user that any changes made to this
@@ -41,7 +71,7 @@
 //#define STRING_VERSION "1.0.2"
 
 #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ // build date and time
-#define STRING_CONFIG_H_AUTHOR "(none, default config)" // Who made the changes.
+#define STRING_CONFIG_H_AUTHOR "(3D-Gussner, Caribou3d)" // Who made the changes.
 
 // SERIAL_PORT selects which serial port should be used for communication with the host.
 // This allows the connection of wireless adapters (for instance) to non-default port pins.
@@ -84,11 +114,6 @@
 // #define PS_DEFAULT_OFF
 
 
-
-// This makes temp sensor 1 a redundant sensor for sensor 0. If the temperatures difference between these sensors is to high the print will be aborted.
-//#define TEMP_SENSOR_1_AS_REDUNDANT
-#define MAX_REDUNDANT_TEMP_SENSOR_DIFF 10
-
 // Actual temperature must be close to target for this long before M109 returns success
 #define TEMP_RESIDENCY_TIME 3  // (seconds)
 #define TEMP_HYSTERESIS 5       // (degC) range of +/- temperatures considered "close" to the target one
@@ -109,15 +134,13 @@
 // Comment the following line to disable PID and enable bang-bang.
 #define PIDTEMP
 #define BANG_MAX 255 // limits current to nozzle while in bang-bang mode; 255=full current
-#define PID_MAX BANG_MAX // limits current to nozzle while PID is active (see PID_FUNCTIONAL_RANGE below); 255=full current
+#define PID_MAX BANG_MAX // limits current to nozzle while PID is active; 255=full current
 #ifdef PIDTEMP
   //#define PID_DEBUG // Sends debug data to the serial port.
   //#define PID_OPENLOOP 1 // Puts PID in open loop. M104/M140 sets the output power from 0 to PID_MAX
   //#define SLOW_PWM_HEATERS // PWM with very low frequency (roughly 0.125Hz=8s) and minimum state time of approximately 1s useful for heaters driven by a relay
-  #define PID_FUNCTIONAL_RANGE 10 // If the temperature difference between the target temperature and the actual temperature
-                                  // is more then PID_FUNCTIONAL_RANGE then the PID will be shut off and the heater will be set to min/max.
   #define PID_INTEGRAL_DRIVE_MAX PID_MAX  //limit for the integral term
-  #define K1 0.95 //smoothing factor within the PID
+  #define PID_K1 0.95 //smoothing factor within the PID
   #define PID_dT ((OVERSAMPLENR * 10.0)/(F_CPU / 64.0 / 256.0)) //sampling period of the temperature routine
 
 // If you are using a pre-configured hotend then you can use one of the value sets by uncommenting it
@@ -135,43 +158,6 @@
 //    #define  DEFAULT_Kd 440
 #endif // PIDTEMP
 
-// Bed Temperature Control
-// Select PID or bang-bang with PIDTEMPBED. If bang-bang, BED_LIMIT_SWITCHING will enable hysteresis
-//
-// Uncomment this to enable PID on the bed. It uses the same frequency PWM as the extruder.
-// If your PID_dT above is the default, and correct for your hardware/configuration, that means 7.689Hz,
-// which is fine for driving a square wave into a resistive load and does not significantly impact you FET heating.
-// This also works fine on a Fotek SSR-10DA Solid State Relay into a 250W heater.
-// If your configuration is significantly different than this and you don't understand the issues involved, you probably
-// shouldn't use bed PID until someone else verifies your hardware works.
-// If this is enabled, find your own PID constants below.
-//#define PIDTEMPBED
-//
-//#define BED_LIMIT_SWITCHING
-
-// This sets the max power delivered to the bed, and replaces the HEATER_BED_DUTY_CYCLE_DIVIDER option.
-// all forms of bed control obey this (PID, bang-bang, bang-bang with hysteresis)
-// setting this to anything other than 255 enables a form of PWM to the bed just like HEATER_BED_DUTY_CYCLE_DIVIDER did,
-// so you shouldn't use it unless you are OK with PWM on your bed.  (see the comment on enabling PIDTEMPBED)
-#define MAX_BED_POWER 255 // limits duty cycle to bed; 255=full current
-
-#ifdef PIDTEMPBED
-//120v 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
-//from FOPDT model - kp=.39 Tp=405 Tdead=66, Tc set to 79.2, aggressive factor of .15 (vs .1, 1, 10)
-    #define  DEFAULT_bedKp 10.00
-    #define  DEFAULT_bedKi .023
-    #define  DEFAULT_bedKd 305.4
-
-//120v 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
-//from pidautotune
-//    #define  DEFAULT_bedKp 97.1
-//    #define  DEFAULT_bedKi 1.41
-//    #define  DEFAULT_bedKd 1675.16
-
-// FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
-#endif // PIDTEMPBED
-
-
 
 //this prevents dangerous Extruder moves, i.e. if the temperature is under the limit
 //can be software-disabled for whatever purposes by
@@ -179,6 +165,10 @@
 //if PREVENT_DANGEROUS_EXTRUDE is on, you can still disable (uncomment) very long bits of extrusion separately.
 #define PREVENT_LENGTHY_EXTRUDE
 
+#ifdef DEBUG_DISABLE_PREVENT_EXTRUDER
+#undef PREVENT_DANGEROUS_EXTRUDE
+#undef PREVENT_LENGTHY_EXTRUDE
+#endif //DEBUG_DISABLE_PREVENT_EXTRUDER
 
 #define EXTRUDE_MAXLENGTH (X_MAX_LENGTH+Y_MAX_LENGTH) //prevent extrusion of very large distances.
 
@@ -251,9 +241,9 @@ your extruder heater takes 2 minutes to hit the target on heating.
 
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 
-const bool X_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of the endstop.
-const bool Y_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of the endstop.
-const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of the endstop.
+#define X_MAX_ENDSTOP_INVERTING 0 // set to 1 to invert the logic of the endstop.
+#define Y_MAX_ENDSTOP_INVERTING 0 // set to 1 to invert the logic of the endstop.
+#define Z_MAX_ENDSTOP_INVERTING 1 // set to 1 to invert the logic of the endstop.
 //#define DISABLE_MAX_ENDSTOPS
 //#define DISABLE_MIN_ENDSTOPS
 
@@ -269,18 +259,12 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 #define E_ENABLE_ON 0 // For all extruders
 
 // Disables axis when it's not being used.
-#define DISABLE_X false
-#define DISABLE_Y false
-#define DISABLE_Z false
-#define DISABLE_E false // For all extruders
-#define DISABLE_INACTIVE_EXTRUDER true //disable only inactive extruders and keep active extruder enabled
+#define DISABLE_X 0
+#define DISABLE_Y 0
+#define DISABLE_Z 0
+#define DISABLE_E 0// For all extruders
+#define DISABLE_INACTIVE_EXTRUDER 1 //disable only inactive extruders and keep active extruder enabled
 
-#define INVERT_X_DIR false    // for Mendel set to false, for Orca set to true
-#define INVERT_Y_DIR false    // for Mendel set to true, for Orca set to false
-#define INVERT_Z_DIR false     // for Mendel set to false, for Orca set to true
-#define INVERT_E0_DIR true   // for direct drive extruder v9 set to true, for geared extruder set to false
-#define INVERT_E1_DIR false    // for direct drive extruder v9 set to true, for geared extruder set to false
-#define INVERT_E2_DIR false   // for direct drive extruder v9 set to true, for geared extruder set to false
 
 // ENDSTOP SETTINGS:
 // Sets direction of endstops when homing; 1=MAX, -1=MIN
@@ -288,14 +272,23 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 #define Y_HOME_DIR -1
 #define Z_HOME_DIR -1
 
-#define min_software_endstops true // If true, axis won't move to coordinates less than HOME_POS.
-#define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
-
+#ifdef DEBUG_DISABLE_SWLIMITS
+#define min_software_endstops 0
+#define max_software_endstops 0
+#else
+#define min_software_endstops 1 // If true, axis won't move to coordinates less than HOME_POS.
+#define max_software_endstops 1  // If true, axis won't move to coordinates greater than the defined lengths below.
+#endif //DEBUG_DISABLE_SWLIMITS
 
 
 #define X_MAX_LENGTH (X_MAX_POS - X_MIN_POS)
-#define Y_MAX_LENGTH (Y_MAX_POS - Y_MIN_POS)
+#define Y_MAX_LENGTH (Y_MAX_POS - Y_MIN_POS) 
 #define Z_MAX_LENGTH (Z_MAX_POS - Z_MIN_POS)
+
+#define Z_HEIGHT_HIDE_LIVE_ADJUST_MENU 2.0f
+
+#define HOME_Z_SEARCH_THRESHOLD 0.15f             // Threshold of the Z height in calibration
+
 //============================= Bed Auto Leveling ===========================
 
 //#define ENABLE_AUTO_BED_LEVELING // Delete the comment to enable (remove // at the start of the line)
@@ -353,7 +346,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
   #define Y_PROBE_OFFSET_FROM_EXTRUDER -29
   #define Z_PROBE_OFFSET_FROM_EXTRUDER -12.35
 
-  #define Z_RAISE_BEFORE_HOMING 4       // (in mm) Raise Z before homing (G28) for Probe Clearance.
+  #define Z_RAISE_BEFORE_HOMING 5       // (in mm) Raise Z before homing (G28) for Probe Clearance.
                                         // Be sure you have this distance over your Z_MAX_POS in case
 
   #define XY_TRAVEL_SPEED 8000         // X and Y axis travel speed between probes, in mm/min
@@ -372,9 +365,9 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 
 //If you have enabled the Bed Auto Leveling and are using the same Z Probe for Z Homing,
-//it is highly recommended you let this Z_SAFE_HOMING enabled!!!
+//it is highly recommended you let this Z_SAFE_HOMING enabled!
 
-  #define Z_SAFE_HOMING   // This feature is meant to avoid Z homing with probe outside the bed area.
+  //#define Z_SAFE_HOMING   // This feature is meant to avoid Z homing with probe outside the bed area.
                           // When defined, it will:
                           // - Allow Z homing only after X and Y homing AND stepper drivers still enabled
                           // - If stepper drivers timeout, it will need X and Y homing again before Z homing
@@ -421,9 +414,6 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 //Manual homing switch locations:
 // For deltabots this means top and center of the Cartesian print volume.
 
-//#define MANUAL_Z_HOME_POS 402 // For delta: Distance between nozzle and print surface after homing.
-
-
 
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
 // The offset has to be X=0, Y=0 for the extruder 0 hotend (default extruder).
@@ -432,9 +422,10 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // #define EXTRUDER_OFFSET_Y {0.0, 5.00}  // (in mm) for each extruder, offset of the hotend on the Y axis
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
-#define DEFAULT_XYJERK                20.0    // (mm/sec)
+#define DEFAULT_XJERK                10       // (mm/sec)
+#define DEFAULT_YJERK                10       // (mm/sec)
 #define DEFAULT_ZJERK                 0.4     // (mm/sec)
-#define DEFAULT_EJERK                 5.0    // (mm/sec)
+#define DEFAULT_EJERK                 4.5     // (mm/sec)
 
 //===========================================================================
 //=============================Additional Features===========================
@@ -460,178 +451,30 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // please keep turned on if you can.
 //#define EEPROM_CHITCHAT
 
-
+// Host Keepalive
+//
+// When enabled Marlin will send a busy status message to the host
+// every couple of seconds when it can't accept commands.
+//
+#ifndef HEATBED_ANALYSIS
+#define HOST_KEEPALIVE_FEATURE    // Disable this if your host doesn't like keepalive messages
+#endif //HEATBED_ANALYSIS
+#define HOST_KEEPALIVE_INTERVAL 2 // Number of seconds between "busy" messages. Set with M113.
 
 //LCD and SD support
-#define ULTRA_LCD  //general LCD support, also 16x2
-//#define DOGLCD  // Support for SPI LCD 128x64 (Controller ST7565R graphic Display Family)
 #define SDSUPPORT // Enable SD Card Support in Hardware Console
 //#define SDSLOW // Use slower SD transfer mode (not normally needed - uncomment if you're getting volume init error)
 #define SD_CHECK_AND_RETRY // Use CRC checks and retries on the SD communication
-#define ENCODER_PULSES_PER_STEP 2 // Increase if you have a high resolution encoder
-#define ENCODER_STEPS_PER_MENU_ITEM 2 // Set according to ENCODER_PULSES_PER_STEP or your liking
-//#define ULTIMAKERCONTROLLER //as available from the Ultimaker online store.
-//#define ULTIPANEL  //the UltiPanel as on Thingiverse
-//#define LCD_FEEDBACK_FREQUENCY_HZ 1000	// this is the tone frequency the buzzer plays when on UI feedback. ie Screen Click
-//#define LCD_FEEDBACK_FREQUENCY_DURATION_MS 100 // the duration the buzzer plays the UI feedback sound. ie Screen Click
-
-// The MaKr3d Makr-Panel with graphic controller and SD support
-// http://reprap.org/wiki/MaKr3d_MaKrPanel
-//#define MAKRPANEL
+#define ENCODER_PULSES_PER_STEP 4 // Increase if you have a high resolution encoder
+//#define ENCODER_STEPS_PER_MENU_ITEM 1 // Set according to ENCODER_PULSES_PER_STEP or your liking
 
 // The RepRapDiscount Smart Controller (white PCB)
 // http://reprap.org/wiki/RepRapDiscount_Smart_Controller
 #define REPRAP_DISCOUNT_SMART_CONTROLLER
+#define SDSUPPORT
+#define LCD_WIDTH 20
+#define LCD_HEIGHT 4
 
-// The GADGETS3D G3D LCD/SD Controller (blue PCB)
-// http://reprap.org/wiki/RAMPS_1.3/1.4_GADGETS3D_Shield_with_Panel
-//#define G3D_PANEL
-
-// The RepRapDiscount FULL GRAPHIC Smart Controller (quadratic white PCB)
-// http://reprap.org/wiki/RepRapDiscount_Full_Graphic_Smart_Controller
-//
-// ==> REMEMBER TO INSTALL U8glib to your ARDUINO library folder: http://code.google.com/p/u8glib/wiki/u8glib
-//#define REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER
-
-// The RepRapWorld REPRAPWORLD_KEYPAD v1.1
-// http://reprapworld.com/?products_details&products_id=202&cPath=1591_1626
-//#define REPRAPWORLD_KEYPAD
-//#define REPRAPWORLD_KEYPAD_MOVE_STEP 10.0 // how much should be moved when a key is pressed, eg 10.0 means 10mm per click
-
-// The Elefu RA Board Control Panel
-// http://www.elefu.com/index.php?route=product/product&product_id=53
-// REMEMBER TO INSTALL LiquidCrystal_I2C.h in your ARDUINO library folder: https://github.com/kiyoshigawa/LiquidCrystal_I2C
-//#define RA_CONTROL_PANEL
-
-//automatic expansion
-#if defined (MAKRPANEL)
- #define DOGLCD
- #define SDSUPPORT
- #define ULTIPANEL
- #define NEWPANEL
- #define DEFAULT_LCD_CONTRAST 17
-#endif
-
-#if defined (REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER)
- #define DOGLCD
- #define U8GLIB_ST7920
- #define REPRAP_DISCOUNT_SMART_CONTROLLER
-#endif
-
-#if defined(ULTIMAKERCONTROLLER) || defined(REPRAP_DISCOUNT_SMART_CONTROLLER) || defined(G3D_PANEL)
- #define ULTIPANEL
- #define NEWPANEL
-#endif
-
-#if defined(REPRAPWORLD_KEYPAD)
-  #define NEWPANEL
-  #define ULTIPANEL
-#endif
-#if defined(RA_CONTROL_PANEL)
- #define ULTIPANEL
- #define NEWPANEL
- #define LCD_I2C_TYPE_PCA8574
- #define LCD_I2C_ADDRESS 0x27   // I2C Address of the port expander
-#endif
-
-//I2C PANELS
-
-//#define LCD_I2C_SAINSMART_YWROBOT
-#ifdef LCD_I2C_SAINSMART_YWROBOT
-  // This uses the LiquidCrystal_I2C library ( https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/Home )
-  // Make sure it is placed in the Arduino libraries directory.
-  #define LCD_I2C_TYPE_PCF8575
-  #define LCD_I2C_ADDRESS 0x27   // I2C Address of the port expander
-  #define NEWPANEL
-  #define ULTIPANEL
-#endif
-
-// PANELOLU2 LCD with status LEDs, separate encoder and click inputs
-//#define LCD_I2C_PANELOLU2
-#ifdef LCD_I2C_PANELOLU2
-  // This uses the LiquidTWI2 library v1.2.3 or later ( https://github.com/lincomatic/LiquidTWI2 )
-  // Make sure the LiquidTWI2 directory is placed in the Arduino or Sketchbook libraries subdirectory.
-  // (v1.2.3 no longer requires you to define PANELOLU in the LiquidTWI2.h library header file)
-  // Note: The PANELOLU2 encoder click input can either be directly connected to a pin
-  //       (if BTN_ENC defined to != -1) or read through I2C (when BTN_ENC == -1).
-  #define LCD_I2C_TYPE_MCP23017
-  #define LCD_I2C_ADDRESS 0x20 // I2C Address of the port expander
-  #define LCD_USE_I2C_BUZZER //comment out to disable buzzer on LCD
-  #define NEWPANEL
-  #define ULTIPANEL
-
-  #ifndef ENCODER_PULSES_PER_STEP
-	#define ENCODER_PULSES_PER_STEP 4
-  #endif
-
-  #ifndef ENCODER_STEPS_PER_MENU_ITEM
-	#define ENCODER_STEPS_PER_MENU_ITEM 2
-  #endif
-
-
-  #ifdef LCD_USE_I2C_BUZZER
-	#define LCD_FEEDBACK_FREQUENCY_HZ 1000
-	#define LCD_FEEDBACK_FREQUENCY_DURATION_MS 100
-  #endif
-
-#endif
-
-// Panucatt VIKI LCD with status LEDs, integrated click & L/R/U/P buttons, separate encoder inputs
-//#define LCD_I2C_VIKI
-#ifdef LCD_I2C_VIKI
-  // This uses the LiquidTWI2 library v1.2.3 or later ( https://github.com/lincomatic/LiquidTWI2 )
-  // Make sure the LiquidTWI2 directory is placed in the Arduino or Sketchbook libraries subdirectory.
-  // Note: The pause/stop/resume LCD button pin should be connected to the Arduino
-  //       BTN_ENC pin (or set BTN_ENC to -1 if not used)
-  #define LCD_I2C_TYPE_MCP23017
-  #define LCD_I2C_ADDRESS 0x20 // I2C Address of the port expander
-  #define LCD_USE_I2C_BUZZER //comment out to disable buzzer on LCD (requires LiquidTWI2 v1.2.3 or later)
-  #define NEWPANEL
-  #define ULTIPANEL
-#endif
-
-// Shift register panels
-// ---------------------
-// 2 wire Non-latching LCD SR from:
-// https://bitbucket.org/fmalpartida/new-liquidcrystal/wiki/schematics#!shiftregister-connection 
-
-//#define SAV_3DLCD
-#ifdef SAV_3DLCD
-   #define SR_LCD_2W_NL    // Non latching 2 wire shiftregister
-   #define NEWPANEL
-   #define ULTIPANEL
-#endif
-
-
-#ifdef ULTIPANEL
-//  #define NEWPANEL  //enable this if you have a click-encoder panel
-  #define SDSUPPORT
-  #define ULTRA_LCD
-  #ifdef DOGLCD // Change number of lines to match the DOG graphic display
-    #define LCD_WIDTH 20
-    #define LCD_HEIGHT 5
-  #else
-    #define LCD_WIDTH 20
-    #define LCD_HEIGHT 4
-  #endif
-#else //no panel but just LCD
-  #ifdef ULTRA_LCD
-  #ifdef DOGLCD // Change number of lines to match the 128x64 graphics display
-    #define LCD_WIDTH 20
-    #define LCD_HEIGHT 5
-  #else
-    #define LCD_WIDTH 16
-    #define LCD_HEIGHT 2
-  #endif
-  #endif
-#endif
-
-// default LCD contrast for dogm-like LCD displays
-#ifdef DOGLCD
-# ifndef DEFAULT_LCD_CONTRAST
-#  define DEFAULT_LCD_CONTRAST 32
-# endif
-#endif
 
 // Increase the FAN pwm frequency. Removes the PWM noise but increases heating in the FET/Arduino
 //#define FAST_PWM_FAN
@@ -644,7 +487,11 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // Use software PWM to drive the fan, as for the heaters. This uses a very low frequency
 // which is not ass annoying as with the hardware PWM. On the other hand, if this frequency
 // is too low, you should also increment SOFT_PWM_SCALE.
-//#define FAN_SOFT_PWM
+#define FAN_SOFT_PWM
+#define FAN_SOFT_PWM_BITS 4 //PWM bit resolution = 4bits, freq = 62.5Hz
+
+// Bed soft pwm
+#define HEATER_BED_SOFT_PWM_BITS 5 //PWM bit resolution = 5bits, freq = 31.25Hz
 
 // Incrementing this by 1 will double the software PWM frequency,
 // affecting heaters, and the fan if FAN_SOFT_PWM is enabled.
@@ -658,9 +505,6 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 // SF send wrong arc g-codes when using Arc Point as fillet procedure
 //#define SF_ARC_FIX
-
-// Support for the BariCUDA Paste Extruder.
-//#define BARICUDA
 
 //define BlinkM/CyzRgb Support
 //#define BLINKM
@@ -679,51 +523,41 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 //
 //#define NUM_SERVOS 3 // Servo index starts with 0 for M280 command
 
-// Servo Endstops
-//
-// This allows for servo actuated endstops, primary usage is for the Z Axis to eliminate calibration or bed height changes.
-// Use M206 command to correct for switch height offset to actual nozzle height. Store that setting with M500.
-//
-//#define SERVO_ENDSTOPS {-1, -1, 0} // Servo index for X, Y, Z. Disable with -1
-//#define SERVO_ENDSTOP_ANGLES {0,0, 0,0, 70,0} // X,Y,Z Axis Extend and Retract angles
+#define DEFAULT_NOMINAL_FILAMENT_DIA  1.75  //Enter the diameter (in mm) of the filament generally used (3.0 mm or 1.75 mm). Used by the volumetric extrusion.
 
-/**********************************************************************\
- * Support for a filament diameter sensor
- * Also allows adjustment of diameter at print time (vs  at slicing)
- * Single extruder only at this point (extruder 0)
- * 
- * Motherboards
- * 34 - RAMPS1.4 - uses Analog input 5 on the AUX2 connector 
- * 81 - Printrboard - Uses Analog input 2 on the Exp1 connector (version B,C,D,E)
- * 301 - Rambo  - uses Analog input 3
- * Note may require analog pins to be defined for different motherboards
- **********************************************************************/
-// Uncomment below to enable
-//#define FILAMENT_SENSOR
+// Calibration status of the machine, to be stored into the EEPROM,
+// (unsigned char*)EEPROM_CALIBRATION_STATUS
+enum CalibrationStatus
+{
+	// Freshly assembled, needs to peform a self-test and the XYZ calibration.
+	CALIBRATION_STATUS_ASSEMBLED = 255,
 
-#define FILAMENT_SENSOR_EXTRUDER_NUM	0  //The number of the extruder that has the filament sensor (0,1,2)
-#define MEASUREMENT_DELAY_CM			14  //measurement delay in cm.  This is the distance from filament sensor to middle of barrel
+	// For the wizard: self test has been performed, now the XYZ calibration is needed.
+	CALIBRATION_STATUS_XYZ_CALIBRATION = 250,
 
-#define DEFAULT_NOMINAL_FILAMENT_DIA  3.0  //Enter the diameter (in mm) of the filament generally used (3.0 mm or 1.75 mm) - this is then used in the slicer software.  Used for sensor reading validation
-#define MEASURED_UPPER_LIMIT          3.30  //upper limit factor used for sensor reading validation in mm
-#define MEASURED_LOWER_LIMIT          1.90  //lower limit factor for sensor reading validation in mm
-#define MAX_MEASUREMENT_DELAY			20  //delay buffer size in bytes (1 byte = 1cm)- limits maximum measurement delay allowable (must be larger than MEASUREMENT_DELAY_CM  and lower number saves RAM)
+	// For the wizard: factory assembled, needs to run Z calibration.
+	CALIBRATION_STATUS_Z_CALIBRATION = 240,
 
-//defines used in the code
-#define DEFAULT_MEASURED_FILAMENT_DIA  DEFAULT_NOMINAL_FILAMENT_DIA  //set measured to nominal initially 
+	// The XYZ calibration has been performed, now it remains to run the V2Calibration.gcode.
+	CALIBRATION_STATUS_LIVE_ADJUST = 230,
 
-//When using an LCD, uncomment the line below to display the Filament sensor data on the last line instead of status.  Status will appear for 5 sec.
-//#define FILAMENT_LCD_DISPLAY
+    // Calibrated, ready to print.
+    CALIBRATION_STATUS_CALIBRATED = 1,
 
+    // Legacy: resetted by issuing a G86 G-code.
+    // This value can only be expected after an upgrade from the initial MK2 firmware releases.
+    // Currently the G86 sets the calibration status to 
+    CALIBRATION_STATUS_UNKNOWN = 0,
+};
 
-
-
-
+// Try to maintain a minimum distance from the bed even when Z is
+// unknown when doing the following operations
+#define MIN_Z_FOR_LOAD    50
+#define MIN_Z_FOR_UNLOAD  20
+#define MIN_Z_FOR_PREHEAT 10
 
 #include "Configuration_adv.h"
 #include "thermistortables.h"
-
-
 
 
 #endif //__CONFIGURATION_H

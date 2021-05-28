@@ -1,0 +1,49 @@
+{
+    "configurations": [
+        {
+            "name": "!!! WARNING !!! AUTO-GENERATED FILE, PLEASE DO NOT MODIFY IT AND USE https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags"
+        },
+        {
+            "name": "Mac",
+            "macFrameworkPath": [],
+            "includePath": [
+                "/Users/janknieling/Documents/git/github/Caribou-Firmware/include",
+                "/Users/janknieling/Documents/git/github/Caribou-Firmware/Firmware",
+                "/Users/janknieling/.platformio/packages/framework-arduino-avr-prusa_rambo/cores/prusa_rambo",
+                "/Users/janknieling/.platformio/packages/framework-arduino-avr-prusa_rambo/variants/prusa_einsy_rambo",
+                "/Users/janknieling/.platformio/packages/tool-unity",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "/Users/janknieling/Documents/git/github/Caribou-Firmware/include",
+                    "/Users/janknieling/Documents/git/github/Caribou-Firmware/Firmware",
+                    "/Users/janknieling/.platformio/packages/framework-arduino-avr-prusa_rambo/cores/prusa_rambo",
+                    "/Users/janknieling/.platformio/packages/framework-arduino-avr-prusa_rambo/variants/prusa_einsy_rambo",
+                    "/Users/janknieling/.platformio/packages/tool-unity",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=50003",
+                "ARDUINO_AVR_RAMBO",
+                "VERSION=3.9.1",
+                "F_CPU=16000000L",
+                "ARDUINO_ARCH_AVR",
+                "ARDUINO=10808",
+                "__AVR_ATmega2560__",
+                ""
+            ],
+            "intelliSenseMode": "gcc-x64",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "compilerPath": "/Users/janknieling/.platformio/packages/toolchain-atmelavr/bin/avr-gcc",
+            "compilerArgs": [
+                "-mmcu=atmega2560",
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}

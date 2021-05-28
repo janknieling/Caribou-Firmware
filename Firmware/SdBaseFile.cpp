@@ -294,7 +294,7 @@ bool SdBaseFile::getFilename(char* name) {
   return true;
 }
 //------------------------------------------------------------------------------
-void SdBaseFile::getpos(fpos_t* pos) {
+void SdBaseFile::getpos(filepos_t* pos) {
   pos->position = curPosition_;
   pos->cluster = curCluster_;
 }
@@ -394,7 +394,10 @@ bool SdBaseFile::make83Name(const char* str, uint8_t* name, const char** ptr) {
       i = 8;   // place for extension
     } else {
       // illegal FAT characters
-      PGM_P p = PSTR("|<>^+=?/[];,*\"\\");
+      //PGM_P p = PSTR("|<>^+=?/[];,*\"\\");
+      // 2019-08-27 really?
+      // Microsoft defines, that only a subset of these characters is not allowed.
+      PGM_P p = PSTR("|<>?/*\"\\");
       uint8_t b;
       while ((b = pgm_read_byte(p++))) if (b == c) goto fail;
       // check size and only allow ASCII printable characters
@@ -925,7 +928,7 @@ bool SdBaseFile::openRoot(SdVolume* vol) {
  * \return The byte if no error and not at eof else -1;
  */
 int SdBaseFile::peek() {
-  fpos_t pos;
+  filepos_t pos;
   getpos(&pos);
   int c = read();
   if (c >= 0) setpos(&pos);
@@ -1492,7 +1495,7 @@ bool SdBaseFile::seekSet(uint32_t pos) {
   return false;
 }
 //------------------------------------------------------------------------------
-void SdBaseFile::setpos(fpos_t* pos) {
+void SdBaseFile::setpos(filepos_t* pos) {
   curPosition_ = pos->position;
   curCluster_ = pos->cluster;
 }

@@ -23,26 +23,8 @@
 
 #include "planner.h"
 
-#if EXTRUDERS > 2
-  #define WRITE_E_STEP(v) { if(current_block->active_extruder == 2) { WRITE(E2_STEP_PIN, v); } else { if(current_block->active_extruder == 1) { WRITE(E1_STEP_PIN, v); } else { WRITE(E0_STEP_PIN, v); }}}
-  #define NORM_E_DIR() { if(current_block->active_extruder == 2) { WRITE(E2_DIR_PIN, !INVERT_E2_DIR); } else { if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, !INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, !INVERT_E0_DIR); }}}
-  #define REV_E_DIR() { if(current_block->active_extruder == 2) { WRITE(E2_DIR_PIN, INVERT_E2_DIR); } else { if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, INVERT_E0_DIR); }}}
-#elif EXTRUDERS > 1
-  #ifndef DUAL_X_CARRIAGE
-    #define WRITE_E_STEP(v) { if(current_block->active_extruder == 1) { WRITE(E1_STEP_PIN, v); } else { WRITE(E0_STEP_PIN, v); }}
-    #define NORM_E_DIR() { if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, !INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, !INVERT_E0_DIR); }}
-    #define REV_E_DIR() { if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, INVERT_E0_DIR); }}
-  #else
-    extern bool extruder_duplication_enabled;
-    #define WRITE_E_STEP(v) { if(extruder_duplication_enabled) { WRITE(E0_STEP_PIN, v); WRITE(E1_STEP_PIN, v); } else if(current_block->active_extruder == 1) { WRITE(E1_STEP_PIN, v); } else { WRITE(E0_STEP_PIN, v); }}
-    #define NORM_E_DIR() { if(extruder_duplication_enabled) { WRITE(E0_DIR_PIN, !INVERT_E0_DIR); WRITE(E1_DIR_PIN, !INVERT_E1_DIR); } else if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, !INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, !INVERT_E0_DIR); }}
-    #define REV_E_DIR() { if(extruder_duplication_enabled) { WRITE(E0_DIR_PIN, INVERT_E0_DIR); WRITE(E1_DIR_PIN, INVERT_E1_DIR); } else if(current_block->active_extruder == 1) { WRITE(E1_DIR_PIN, INVERT_E1_DIR); } else { WRITE(E0_DIR_PIN, INVERT_E0_DIR); }}
-  #endif  
-#else
-  #define WRITE_E_STEP(v) WRITE(E0_STEP_PIN, v)
-  #define NORM_E_DIR() WRITE(E0_DIR_PIN, !INVERT_E0_DIR)
-  #define REV_E_DIR() WRITE(E0_DIR_PIN, INVERT_E0_DIR)
-#endif
+#define ENABLE_STEPPER_DRIVER_INTERRUPT()  TIMSK1 |= (1<<OCIE1A)
+#define DISABLE_STEPPER_DRIVER_INTERRUPT() TIMSK1 &= ~(1<<OCIE1A)
 
 #ifdef ABORT_ON_ENDSTOP_HIT_FEATURE_ENABLED
 extern bool abort_on_endstop_hit;
@@ -50,6 +32,10 @@ extern bool abort_on_endstop_hit;
 
 // Initialize and start the stepper motor subsystem
 void st_init();
+
+// Interrupt Service Routines
+
+void isr();
 
 // Block until all buffered steps are executed
 void st_synchronize();
@@ -61,41 +47,53 @@ void st_set_e_position(const long &e);
 // Get current position in steps
 long st_get_position(uint8_t axis);
 
-#ifdef ENABLE_AUTO_BED_LEVELING
+// Get current x and y position in steps
+void st_get_position_xy(long &x, long &y);
+
 // Get current position in mm
 float st_get_position_mm(uint8_t axis);
-#endif  //ENABLE_AUTO_BED_LEVELING
 
-// The stepper subsystem goes to sleep when it runs out of things to execute. Call this
-// to notify the subsystem that it is time to go to work.
-void st_wake_up();
 
-  
+// Call this function just before re-enabling the stepper driver interrupt and the global interrupts
+// to avoid a stepper timer overflow.
+void st_reset_timer();
+
 void checkHitEndstops(); //call from somewhere to create an serial error message with the locations the endstops where hit, in case they were triggered
-void endstops_hit_on_purpose(); //avoid creation of the message, i.e. after homing and before a routine call of checkHitEndstops();
+bool endstops_hit_on_purpose(); //avoid creation of the message, i.e. after homing and before a routine call of checkHitEndstops();
+bool endstop_z_hit_on_purpose();
 
-void enable_endstops(bool check); // Enable/disable endstop checking
+
+bool enable_endstops(bool check); // Enable/disable endstop checking. Return the old value.
+bool enable_z_endstop(bool check);
+void invert_z_endstop(bool endstop_invert);
 
 void checkStepperErrors(); //Print errors detected by the stepper
 
-void finishAndDisableSteppers();
-
 extern block_t *current_block;  // A pointer to the block currently being traced
+extern bool x_min_endstop;
+extern bool x_max_endstop;
+extern bool y_min_endstop;
+extern bool y_max_endstop;
+extern volatile long count_position[NUM_AXIS];
 
 void quickStop();
-
+#if defined(DIGIPOTSS_PIN) && DIGIPOTSS_PIN > -1
 void digitalPotWrite(int address, int value);
+#endif //defined(DIGIPOTSS_PIN) && DIGIPOTSS_PIN > -1
 void microstep_ms(uint8_t driver, int8_t ms1, int8_t ms2);
 void microstep_mode(uint8_t driver, uint8_t stepping);
-void digipot_init();
-void digipot_current(uint8_t driver, int current);
+void st_current_init();
+void st_current_set(uint8_t driver, int current);
 void microstep_init();
 void microstep_readings();
 
 #ifdef BABYSTEPPING
   void babystep(const uint8_t axis,const bool direction); // perform a short step with a single stepper motor, outside of any convention
 #endif
-     
 
+#if defined(FILAMENT_SENSOR) && defined(PAT9125)
+// reset the internal filament sensor state
+void st_reset_fsensor();
+#endif
 
 #endif
