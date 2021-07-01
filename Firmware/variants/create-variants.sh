@@ -22,19 +22,19 @@
 # Version 1.0.14
 ################################################################################
 # 3 Jul 2019, vertigo235, Inital varaiants script
-# 8 Aug 2019, 3d-gussner, Modified for Zaribo needs
+# 8 Aug 2019, 3d-gussner, Modified for Caribou needs
 # 14 Sep 2019, 3d-gussner, Added MOD BMSQ and BMSQHT Bondtech Mosquito / High Temperature
 # 20 Sep 2019, 3d-gussner, New Naming convention for the variants.
 #                          As we just support EINSy10a and RAMBo13a boards
 # 01 Oct 2019, 3d-gussner, Fixed MK2.5 issue
 # 12 Oct 2019, 3d-gussner, Add OLED display support
-# 12 Nov 2019, 3d-gussner, Update Bondtech Extruder variants, as they are longer than Zaribo Extruder
+# 12 Nov 2019, 3d-gussner, Update Bondtech Extruder variants, as they are longer than Caribou Extruder
 #                          Also implementing Bondtech Mosquito MMU length settings
 # 14 Nov 2019, 3d-gussner, Merge OLED as default
 # 15 Nov 2019, 3d-gussner, Fix Bondtech Steps on MK25 and MK25s. Thanks to Bernd pointing it out.
 # 30 Dec 2019, 3d-gussner, Fix MK2.5 y motor direction
 # 08 Feb 2020, 3d-gussner, Add Prusa MK25/s and MK3/s with OLED and with/without Bondtech
-# 19 Apr 2020, 3d-gussner, Add #define EXTRUDER_DESIGN R3 in varaiants files for Zaribo, Bear, Bondtech extruder
+# 19 Apr 2020, 3d-gussner, Add #define EXTRUDER_DESIGN R3 in varaiants files for Caribou, Bear, Bondtech extruder
 # 02 Sep 2020, 3d-gussner, Fix OLED display also for Prusa printers
 # 09 Sep 2020, 3d-gussner, Rebranding Caribou and new naming convention
 # 11 Sep 2020, 3d-gussner, Change EXTRUDER_ALTFAN_SPEED_SILENT speed

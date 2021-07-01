@@ -23,6 +23,7 @@ if [ "$LNG" = "all" ]; then
  ./lang-import.sh fr
  ./lang-import.sh it
  ./lang-import.sh pl
+#DO NOT add Community languages here !!!
  exit 0
 fi
 

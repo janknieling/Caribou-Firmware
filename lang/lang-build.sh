@@ -56,8 +56,13 @@ lang_code_hex_data()
   *es*) echo '\x73\x65' ;;
   *fr*) echo '\x72\x66' ;;
   *it*) echo '\x74\x69' ;;
-  *nl*) echo '\x6c\x6e' ;;
   *pl*) echo '\x6c\x70' ;;
+#Community language support
+#Dutch
+  *nl*) echo '\x6c\x6e' ;;
+#Use the 2 lines below as a template and replace 'qr' and `\x71\x72`
+##New language
+#  *qr*) echo '\x71\x72' ;;
  esac
  echo '??'
 }
@@ -97,7 +102,7 @@ generate_binary()
  rm -f lang_$1.dat
  LNG=$1
  #check lang dictionary
- ./lang-check.py $1 --no-warning
+ ./lang-check.py $1 #--no-warning
  #create lang_xx.tmp - different processing for 'en' language
  if [ "$1" = "en" ]; then
   #remove comments and empty lines
@@ -177,9 +182,9 @@ if [ "$1" = "all" ]; then
  generate_binary 'de'
  generate_binary 'es'
  generate_binary 'fr'
- generate_binary 'nl'
  generate_binary 'it'
  generate_binary 'pl'
+ #DO NOT add Community languages here !!!
 else
  generate_binary $1
 fi
